@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "dev:backend": "source venv/bin/activate && python backend/app.py",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "source venv/bin/activate && pip install -r requirements.txt"
+  }
+}

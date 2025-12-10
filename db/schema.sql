@@ -1,3 +1,13 @@
+-- Drop existing database if exists 
+DROP DATABASE IF EXISTS delivery_box;
+CREATE DATABASE delivery_box;
+USE delivery_box;
+
+-- Drop tables if they exist 
+DROP TABLE IF EXISTS parcels;
+DROP TABLE IF EXISTS boxes;
+DROP TABLE IF EXISTS users;
+
 -- Table for users
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,

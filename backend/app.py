@@ -1,36 +1,62 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from config import Config
-from google.auth.transport import requests
+from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 import jwt
 import os
 from datetime import datetime, timedelta
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder='static')
 app.config.from_object(Config)
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
 
 # Initialize database
 db = SQLAlchemy(app)
-
-CORS(app)  # Enable CORS for all routes
 
 # JWT Secret key
 JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
 
 
-# Establish and return a database connection 
 def get_db_connection():
+    """Establish and return a database connection"""
     try:
         return db.session.connection()
     except Exception as e:
         raise Exception(f"Failed to establish database connection: {e}")
 
 
-@app.route('/health')
+@app.route('/')
+def index():
+    """Home page"""
+    return render_template('index.html')
+
+
+@app.route('/login')
+def login():
+    """Login page"""
+    return render_template('login.html')
+
+
+@app.route('/dashboard')
+def dashboard():
+    """Dashboard page - requires authentication"""
+    token = request.cookies.get('token')
+    if not token:
+        return redirect(url_for('login'))
+    
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        user = payload
+        return render_template('dashboard.html', user=user)
+    except jwt.InvalidTokenError:
+        return redirect(url_for('login'))
+
+
+@app.route('/api/health')
 def health_check():
+    """Health check endpoint"""
     try:
         connection = get_db_connection()
         return jsonify({"status": "healthy", "database": "connected"})
@@ -38,10 +64,9 @@ def health_check():
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
 
 
-# Authenticate user with Google OAuth token
-@app.route('/auth/google', methods=['POST'])
+@app.route('/api/auth/google', methods=['POST'])
 def google_auth():
-
+    """Authenticate user with Google OAuth token"""
     try:
         data = request.get_json()
         token = data.get('token')
@@ -52,7 +77,7 @@ def google_auth():
         # Verify the Google token
         idinfo = id_token.verify_oauth2_token(
             token, 
-            requests.Request(), 
+            google_requests.Request(), 
             os.getenv('GOOGLE_CLIENT_ID')
         )
         
@@ -77,10 +102,10 @@ def google_auth():
             connection.execute(insert_query, {
                 "name": name,
                 "email": email,
-                "password_hash": google_id  # Store Google ID as password_hash
+                "password_hash": google_id
             })
             connection.commit()
-            user_id = None  # New user
+            user_id = None
         else:
             user_id = user[0]
         
@@ -103,23 +128,22 @@ def google_auth():
             }
         }), 200
         
-    except ValueError as e:
-        # Invalid token
+    except ValueError:
         return jsonify({"error": "Invalid token"}), 401
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 
-# Verify if JWT token is valid
-@app.route('/auth/verify', methods=['GET'])
+@app.route('/api/auth/verify', methods=['GET'])
 def verify_token():
+    """Verify if JWT token is valid"""
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header:
             return jsonify({"error": "No token provided"}), 401
         
-        token = auth_header.split(' ')[1]  # Bearer <token>
+        token = auth_header.split(' ')[1]
         payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
         
         return jsonify({

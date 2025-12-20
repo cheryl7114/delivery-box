@@ -90,31 +90,31 @@
     <script>
         function handleCredentialResponse(response) {
             // The response contains the JWT from Google
-            const token = response.credential;
+            const token = response.credential
             
             // Send to backend
-            fetch('/api/auth/google', {
+            fetch('/auth/google', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: token })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Login failed: ' + data.error);
-                    return;
+            .then(res => {
+                if (res.redirected) {
+                    // Backend sent a redirect, follow it
+                    window.location.href = res.url
+                } else {
+                    return res.json()
                 }
-                
-                // Save JWT token to cookie
-                document.cookie = `token=${data.token}; path=/; max-age=${7*24*60*60}`;
-                
-                // Redirect to dashboard
-                window.location.href = '/dashboard';
+            })
+            .then(data => {
+                if (data && data.error) {
+                    alert('Login failed: ' + data.error)
+                }
             })
             .catch(err => {
-                console.error('Error:', err);
-                alert('Connection error. Please try again.');
-            });
+                console.error('Error:', err)
+                alert('Connection error. Please try again.')
+            })
         }
     </script>
 </body>

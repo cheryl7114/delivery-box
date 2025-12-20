@@ -33,6 +33,7 @@ def login_required(f):
 
 
 @app.route("/")
+@app.route("/index")
 def index():
     # Home page
     return render_template("index.html")
@@ -40,6 +41,11 @@ def index():
 
 @app.route("/login")
 def login():
+    # Check if user is alr logged in
+    user = verify_token()
+    if user:
+        return redirect(url_for("home"))
+    
     # Login page
     google_client_id = os.getenv('GOOGLE_CLIENT_ID')
     return render_template("login.html", google_client_id=google_client_id)

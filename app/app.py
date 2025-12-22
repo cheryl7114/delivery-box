@@ -207,16 +207,30 @@ def register_parcel(user):
 @app.route("/api/fetch-parcels", methods=["GET"])
 @login_required
 def fetch_parcels(user):
-    # Get all parcels for logged in user
+    # Get parcels for logged in user (filtered by status)
     try:
-        query = text("""
-            SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at,
-            b.box_name, b.location
-            FROM parcels p
-            JOIN boxes b ON p.box_id = b.id
-            WHERE p.user_id = :user_id
-            ORDER BY p.delivered_at DESC
-        """)
+        status = request.args.get('status', 'active')  # 'active' or 'history'
+        
+        if status == 'history':
+            # Get collected parcels
+            query = text("""
+                SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at,
+                b.box_name, b.location
+                FROM parcels p
+                JOIN boxes b ON p.box_id = b.id
+                WHERE p.user_id = :user_id AND p.collected_at IS NOT NULL
+                ORDER BY p.collected_at DESC
+            """)
+        else:
+            # Get active parcels (not collected)
+            query = text("""
+                SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at,
+                b.box_name, b.location
+                FROM parcels p
+                JOIN boxes b ON p.box_id = b.id
+                WHERE p.user_id = :user_id AND p.collected_at IS NULL
+                ORDER BY p.delivered_at DESC
+            """)
 
         result = db.session.execute(query, {"user_id": user["user_id"]})
         parcels = result.fetchall()
@@ -235,7 +249,6 @@ def fetch_parcels(user):
 
         return jsonify({"parcels": parcels_list, "type": "success"}), 200
     except Exception as e:
-        db.session.rollback()
         return jsonify({"error": str(e), "type": "error"}), 500
 
 

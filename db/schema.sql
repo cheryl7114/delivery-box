@@ -25,7 +25,7 @@ CREATE TABLE boxes (
 
 -- Table for parcels
 CREATE TABLE parcels (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(100) PRIMARY KEY,
     user_id INT NULL,
     box_id INT NOT NULL,
     parcel_name VARCHAR(255) NOT NULL,

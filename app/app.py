@@ -76,7 +76,7 @@ def google_auth():
         google_client_id = os.getenv("GOOGLE_CLIENT_ID")
 
         if not token or not google_client_id:
-            return jsonify({"error": "Missing token or client ID"}), 400
+            return jsonify({"error": "Missing token or client ID", "type": "error"}), 400
 
         # Verify google token
         idinfo = id_token.verify_oauth2_token(
@@ -88,7 +88,7 @@ def google_auth():
         user_id = idinfo.get("sub")  # Google unique user id
 
         if not email:
-            return jsonify({"error": "Could not get email from Google"}), 400
+            return jsonify({"error": "Could not get email from Google", "type": "error"}), 400
 
         # Check if user exists
         check_query = text("SELECT id, name, email FROM users WHERE email = :email")
@@ -114,7 +114,7 @@ def google_auth():
                 user_id_db = result.fetchone()[0]
             except Exception as e:
                 db.session.rollback()
-                return jsonify({"error": f"Failed to create user: {str(e)}"}), 500
+                return jsonify({"error": f"Failed to create user: {str(e)}", "type": "error"}), 500
         else:
             user_id_db = user[0]
 
@@ -142,7 +142,7 @@ def google_auth():
         return response
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Authentication failed: {str(e)}"}), 401
+        return jsonify({"error": f"Authentication failed: {str(e)}", "type": "error"}), 401
 
 
 def verify_token():
@@ -166,7 +166,7 @@ def verify_token():
 def fetch_parcels(user):
     # Get all parcels for logged in user
     try:
-        query = query = text("""
+        query = text("""
             SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at,
             b.box_name, b.location
             FROM parcels p
@@ -175,7 +175,7 @@ def fetch_parcels(user):
             ORDER BY p.delivered_at DESC
         """)
 
-        result = db.session.commit(query, {"user_id": user["user_id"]})
+        result = db.session.execute(query, {"user_id": user["user_id"]})
         parcels = result.fetchall()
 
         parcels_list = [
@@ -190,10 +190,10 @@ def fetch_parcels(user):
             for p in parcels
         ]
 
-        return jsonify({"parcels": parcels_list}), 200
+        return jsonify({"parcels": parcels_list, "type": "success"}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "type": "error"}), 500
 
 
 if __name__ == "__main__":

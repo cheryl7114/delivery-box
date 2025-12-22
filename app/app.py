@@ -45,9 +45,9 @@ def login():
     user = verify_token()
     if user:
         return redirect(url_for("home"))
-    
+
     # Login page
-    google_client_id = os.getenv('GOOGLE_CLIENT_ID')
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID")
     return render_template("login.html", google_client_id=google_client_id)
 
 
@@ -106,11 +106,10 @@ def google_auth():
                     {"name": name, "email": email, "password_hash": user_id},
                 )
                 db.session.commit()
-                
+
                 # Get the newly created user ID
                 result = db.session.execute(
-                    text("SELECT id FROM users WHERE email = :email"), 
-                    {"email": email}
+                    text("SELECT id FROM users WHERE email = :email"), {"email": email}
                 )
                 user_id_db = result.fetchone()[0]
             except Exception as e:
@@ -144,7 +143,7 @@ def google_auth():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Authentication failed: {str(e)}"}), 401
-    
+
 
 def verify_token():
     # Verify JWT token from cookie and return user info
@@ -160,6 +159,41 @@ def verify_token():
         return None
     except jwt.InvalidTokenError:
         return None
+
+
+@app.route("/api/fetch-parcels", methods=["GET"])
+@login_required
+def fetch_parcels(user):
+    # Get all parcels for logged in user
+    try:
+        query = query = text("""
+            SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at,
+            b.box_name, b.location
+            FROM parcels p
+            JOIN boxes b ON p.box_id = b.id
+            WHERE p.user_id = :user_id
+            ORDER BY p.delivered_at DESC
+        """)
+
+        result = db.session.commit(query, {"user_id": user["user_id"]})
+        parcels = result.fetchall()
+
+        parcels_list = [
+            {
+                "id": p[0],
+                "parcel_name": p[1],
+                "is_delivered": p[2],
+                "collected_at": p[3],
+                "box_name": p[4],
+                "location": p[5],
+            }
+            for p in parcels
+        ]
+
+        return jsonify({"parcels": parcels_list}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

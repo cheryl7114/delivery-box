@@ -184,6 +184,8 @@ def register_parcel(user):
             ), 404
 
         if parcel[1] is not None:
+            if parcel[1] == user["user_id"]:
+                return jsonify({"message": "This parcel is already registered to your account", "type": "info"}), 200
             return jsonify({"error": "Parcel registered to another user", "type": "error"}), 400
 
         # Assign parcel to user

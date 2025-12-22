@@ -34,6 +34,7 @@
             <form id="registerParcelForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Parcel ID</label>
+                    <div id="registerMessage" class="mb-4"></div>
                     <input type="text" id="parcelId" name="parcelId" placeholder="e.g., PKG-12345" required
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                 </div>
@@ -42,7 +43,6 @@
                     Register Parcel
                 </button>
             </form>
-            <div id="message" class="mt-4"></div>
         </div>
 
         <!-- My Parcels -->
@@ -93,6 +93,34 @@
                 document.getElementById('parcelsList').innerHTML = ''
             }
         }
+
+        document.getElementById('registerParcelForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const parcelId = document.getElementById('parcelId').value
+
+            try {
+                const response = await fetch('/api/register-parcel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ parcel_id: parcelId })
+                })
+
+                const data = await response.json()
+
+                showMessage('registerMessage', data)
+
+                // If successful, clear form and re-fetch parcels 
+                if (data.type === 'success') {
+                    document.getElementById('parcelId').value = ''
+                    fetchParcels()
+                }
+            } catch (e) {
+                showMessage('registerMessage', {
+                    error: 'Connection error. Please refresh.',
+                    type: 'error'
+                })
+            }
+        })
 
         fetchParcels()
     </script>

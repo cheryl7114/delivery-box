@@ -214,7 +214,7 @@ def fetch_parcels(user):
         if status == 'history':
             # Get collected parcels
             query = text("""
-                SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at,
+                SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at, p.delivered_at,
                 b.box_name, b.location
                 FROM parcels p
                 JOIN boxes b ON p.box_id = b.id
@@ -224,7 +224,7 @@ def fetch_parcels(user):
         else:
             # Get active parcels (not collected)
             query = text("""
-                SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at,
+                SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at, p.delivered_at,
                 b.box_name, b.location
                 FROM parcels p
                 JOIN boxes b ON p.box_id = b.id
@@ -241,8 +241,9 @@ def fetch_parcels(user):
                 "parcel_name": p[1],
                 "is_delivered": p[2],
                 "collected_at": p[3],
-                "box_name": p[4],
-                "location": p[5],
+                "delivered_at": p[4],
+                "box_name": p[5],
+                "location": p[6],
             }
             for p in parcels
         ]

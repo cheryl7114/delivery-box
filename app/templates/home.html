@@ -45,55 +45,191 @@
             </form>
         </div>
 
-        <!-- My Parcels -->
+        <!-- Parcels Section with Tabs -->
         <div class="bg-white rounded-3xl shadow-xl p-8">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">My Parcels</h2>
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200 mb-6">
+                <button 
+                    id="activeTab" 
+                    onclick="switchTab('active')"
+                    class="tab-button px-6 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition duration-200">
+                    Active Parcels
+                </button>
+                <button 
+                    id="historyTab"
+                    onclick="switchTab('history')"
+                    class="tab-button px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-indigo-600 transition duration-200">
+                    History
+                </button>
+            </div>
+
             <div id="parcelsMessage" class="mb-4"></div>
-            <div id="parcelsList">
-                <p class="text-gray-500 text-center py-8">Loading your parcels...</p>
+            
+            <!-- Active Parcels Tab Content -->
+            <div id="activeContent" class="tab-content">
+                <div id="activeParcels">
+                    <p class="text-gray-500 text-center py-8">Loading your parcels...</p>
+                </div>
+            </div>
+
+            <!-- History Tab Content -->
+            <div id="historyContent" class="tab-content hidden">
+                <div id="historyParcels">
+                    <p class="text-gray-500 text-center py-8">Loading history...</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script>
-        // Fetch user's parcels
-        async function fetchParcels() {
+        let currentTab = 'active'
+
+        // Switch between tabs
+        function switchTab(tab) {
+            currentTab = tab
+            
+            // Update tab buttons
+            const activeTabBtn = document.getElementById('activeTab')
+            const historyTabBtn = document.getElementById('historyTab')
+            
+            if (tab === 'active') {
+                activeTabBtn.className = 'tab-button px-6 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition duration-200'
+                historyTabBtn.className = 'tab-button px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-indigo-600 transition duration-200'
+                document.getElementById('activeContent').classList.remove('hidden')
+                document.getElementById('historyContent').classList.add('hidden')
+            } else {
+                historyTabBtn.className = 'tab-button px-6 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition duration-200'
+                activeTabBtn.className = 'tab-button px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-indigo-600 transition duration-200'
+                document.getElementById('historyContent').classList.remove('hidden')
+                document.getElementById('activeContent').classList.add('hidden')
+            }
+            
+            // Clear messages
+            document.getElementById('parcelsMessage').innerHTML = ''
+        }
+
+        // Fetch active parcels (not collected)
+        async function fetchActiveParcels() {
             try {
-                const response = await fetch('/api/fetch-parcels')
+                const response = await fetch('/api/fetch-parcels?status=active')
                 const data = await response.json()
 
                 if (data.type === 'error') {
                     showMessage('parcelsMessage', data)
-                    document.getElementById('parcelsList').innerHTML = ''
+                    document.getElementById('activeParcels').innerHTML = ''
                     return
                 }
 
-                // Clear any previous error messages
                 document.getElementById('parcelsMessage').innerHTML = ''
-
-                const parcelsList = document.getElementById('parcelsList')
+                const activeParcels = document.getElementById('activeParcels')
 
                 if (data.parcels && data.parcels.length > 0) {
-                    parcelsList.innerHTML = data.parcels.map(parcel => `
-                         <div class="border border-gray-200 rounded-xl p-6 mb-4">
-                            <h3 class="text-xl font-semibold">${parcel.parcel_name}</h3>
-                            <p class="text-sm text-gray-500">ID: ${parcel.id}</p>
-                            <p class="text-sm">Box: ${parcel.box_name} - ${parcel.location}</p>
+                    activeParcels.innerHTML = data.parcels.map(parcel => `
+                        <div class="border border-gray-200 rounded-xl p-6 mb-4 hover:shadow-lg transition duration-200">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800">${parcel.parcel_name}</h3>
+                                    <p class="text-sm text-gray-500">Parcel ID: ${parcel.id}</p>
+                                    ${parcel.is_delivered ? `<p class="text-sm text-gray-500">📅 Delivered: ${new Date(parcel.delivered_at).toLocaleString()}</p>` : ''}
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-sm font-medium ${parcel.is_delivered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${parcel.is_delivered ? 'Ready for pickup' : 'In transit'}
+                                </span>
+                            </div>
+                            
+                            <div class="bg-indigo-50 rounded-lg p-4 mb-4">
+                                <p class="text-sm text-gray-600 mb-1">Location</p>
+                                <p class="font-semibold text-indigo-600">Box ${parcel.box_name} - ${parcel.location}</p>
+                            </div>
+
+                            ${parcel.is_delivered ? `
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-yellow-700">
+                                            <strong>Important:</strong> Only click "Open Box" when you are physically at the collection point and ready to collect your parcel immediately.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button 
+                                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                                </svg>
+                                Open Box
+                            </button>
+                        ` : '<p class="text-gray-500 text-sm text-center">Parcel is still in transit</p>'}
                         </div>
                     `).join('')
                 } else {
-                    parcelsList.innerHTML = '<p class="text-gray-500 text-center py-8">No parcels registered</p>'
+                    activeParcels.innerHTML = '<p class="text-gray-500 text-center py-8">No active parcels</p>'
                 }
             } catch (e) {
                 showMessage('parcelsMessage', {
                     error: 'Connection error. Please refresh.',
                     type: 'error'
                 })
-                document.getElementById('parcelsList').innerHTML = ''
+                document.getElementById('activeParcels').innerHTML = ''
             }
         }
 
+        // Fetch history parcels (collected)
+        async function fetchHistoryParcels() {
+            try {
+                const response = await fetch('/api/fetch-parcels?status=history')
+                const data = await response.json()
+
+                if (data.type === 'error') {
+                    showMessage('parcelsMessage', data)
+                    document.getElementById('historyParcels').innerHTML = ''
+                    return
+                }
+
+                document.getElementById('parcelsMessage').innerHTML = ''
+                const historyParcels = document.getElementById('historyParcels')
+
+                if (data.parcels && data.parcels.length > 0) {
+                    historyParcels.innerHTML = data.parcels.map(parcel => `
+                        <div class="border border-gray-200 rounded-xl p-6 mb-4 bg-gray-50">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800">${parcel.parcel_name}</h3>
+                                    <p class="text-sm text-gray-500">Parcel ID: ${parcel.id}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-sm font-medium bg-gray-200 text-gray-600">
+                                    Collected
+                                </span>
+                            </div>
+                            
+                            <div class="text-sm text-gray-600 space-y-1">
+                                <p>📍 Box: ${parcel.box_name} - ${parcel.location}</p>
+                                <p>📅 Collected: ${new Date(parcel.collected_at).toLocaleString()}</p>
+                            </div>
+                        </div>
+                    `).join('')
+                } else {
+                    historyParcels.innerHTML = '<p class="text-gray-500 text-center py-8">No collection history yet</p>'
+                }
+            } catch (e) {
+                showMessage('parcelsMessage', {
+                    error: 'Connection error. Please refresh.',
+                    type: 'error'
+                })
+                document.getElementById('historyParcels').innerHTML = ''
+            }
+        }
+
+        // Register parcel form
         document.getElementById('registerParcelForm').addEventListener('submit', async (e) => {
             e.preventDefault()
             const parcelId = document.getElementById('parcelId').value
@@ -106,13 +242,11 @@
                 })
 
                 const data = await response.json()
-
                 showMessage('registerMessage', data)
 
-                // If successful, clear form and re-fetch parcels 
-                if (data.type === 'success') {
+                if (data.type === 'success' || data.type === 'info') {
                     document.getElementById('parcelId').value = ''
-                    fetchParcels()
+                    fetchActiveParcels()
                 }
             } catch (e) {
                 showMessage('registerMessage', {
@@ -122,7 +256,9 @@
             }
         })
 
-        fetchParcels()
+        // Load active parcels on page load
+        fetchActiveParcels()
+        fetchHistoryParcels()
     </script>
 </body>
 

@@ -161,6 +161,47 @@ def verify_token():
         return None
 
 
+@app.route("/api/register-parcel", methods=["POST"])
+@login_required
+def register_parcel(user):
+    # Register a parcel
+    try:
+        parcel_id = request.json.get("parcel_id")
+
+        if not parcel_id:
+            return jsonify({"error": "Parcel ID is required", "type": "error"}), 400
+
+        # Check if parcel exists
+        check_query = text(
+            "SELECT id, user_id, parcel_name FROM parcels WHERE id=:parcel_id"
+        )
+        result = db.session.execute(check_query, {"parcel_id": parcel_id})
+        parcel = result.fetchone()
+
+        if not parcel:
+            return jsonify(
+                {"error": "Parcel not found. Please key in a valid ID.", "type": "error"}
+            ), 404
+
+        if parcel[1] is not None:
+            return jsonify({"error": "Parcel registered to another user", "type": "error"}), 400
+
+        # Assign parcel to user
+        update_query = text("UPDATE parcels SET user_id=:user_id WHERE id=:parcel_id")
+        result = db.session.execute(
+            update_query, {"user_id": user["user_id"], "parcel_id": parcel_id}
+        )
+        db.session.commit()
+
+        return jsonify({
+                "message": f"Parcel '{parcel[2]}' registered successfully",
+                "type": "success",
+            }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e), "type": "error"}), 500
+
+
 @app.route("/api/fetch-parcels", methods=["GET"])
 @login_required
 def fetch_parcels(user):

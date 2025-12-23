@@ -161,6 +161,14 @@ def verify_token():
         return None
 
 
+@app.route("/logout")
+def logout():
+    # Delete JWT token cookie and log out
+    res = redirect(url_for("index"))
+    res.delete_cookie("token")
+    return res
+
+
 @app.route("/api/register-parcel", methods=["POST"])
 @login_required
 def register_parcel(user):

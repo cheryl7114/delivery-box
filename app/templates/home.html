@@ -25,43 +25,74 @@
         </div>
     </nav>
 
-    <div class="max-w-4xl mx-auto px-4 py-8 m-8">
+    <div class="max-w-5xl mx-auto px-4 py-10">
         <!-- Register Parcel -->
-        <div class="bg-white rounded-3xl shadow-xl p-8 mb-10">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Register Your Parcel</h2>
-            <p class="text-gray-600 mb-6">Enter the parcel ID from your delivery notification email</p>
+        <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 mb-8 border border-indigo-100">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-2xl">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Register Your Parcel</h2>
+            </div>
+            <p class="text-gray-600 mb-8 text-base">Enter the parcel ID from your delivery notification email to track your package</p>
 
-            <form id="registerParcelForm" class="space-y-4">
+            <div id="registerMessage" class="mb-4"></div>
+            <form id="registerParcelForm" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Parcel ID</label>
-                    <div id="registerMessage" class="mb-4"></div>
-                    <input type="text" id="parcelId" name="parcelId" placeholder="e.g., PKG-12345" required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">Parcel ID</label>
+                    <div class="relative">
+                        <input type="text" id="parcelId" name="parcelId" placeholder="e.g., PKG-12345" required
+                            class="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-lg" />
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
                 <button type="submit"
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition duration-200">
+                    class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                     Register Parcel
                 </button>
             </form>
         </div>
 
         <!-- Parcels Section with Tabs -->
-        <div class="bg-white rounded-3xl shadow-xl p-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">My Parcels</h2>
+        <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 border border-indigo-100">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-2xl">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">My Parcels</h2>
+            </div>
             
             <!-- Tabs -->
-            <div class="flex border-b border-gray-200 mb-6">
+            <div class="flex gap-2 bg-gray-100 rounded-2xl p-2 mb-8">
                 <button 
                     id="activeTab" 
                     onclick="switchTab('active')"
-                    class="tab-button px-6 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition duration-200">
-                    Active Parcels
+                    class="flex-1 px-6 py-3 font-semibold rounded-xl bg-white text-indigo-600 shadow-md transition duration-200">
+                    <span class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                        </svg>
+                        Active Parcels
+                    </span>
                 </button>
                 <button 
                     id="historyTab"
                     onclick="switchTab('history')"
-                    class="tab-button px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-indigo-600 transition duration-200">
-                    History
+                    class="flex-1 px-6 py-3 font-semibold rounded-xl text-gray-600 hover:bg-white/50 transition duration-200">
+                    <span class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        History
+                    </span>
                 </button>
             </div>
 
@@ -96,13 +127,13 @@
             const historyTabBtn = document.getElementById('historyTab')
             
             if (tab === 'active') {
-                activeTabBtn.className = 'tab-button px-6 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition duration-200'
-                historyTabBtn.className = 'tab-button px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-indigo-600 transition duration-200'
+                activeTabBtn.className = 'flex-1 px-6 py-3 font-semibold rounded-xl bg-white text-indigo-600 shadow-md transition duration-200'
+                historyTabBtn.className = 'flex-1 px-6 py-3 font-semibold rounded-xl text-gray-600 hover:bg-white/50 transition duration-200'
                 document.getElementById('activeContent').classList.remove('hidden')
                 document.getElementById('historyContent').classList.add('hidden')
             } else {
-                historyTabBtn.className = 'tab-button px-6 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition duration-200'
-                activeTabBtn.className = 'tab-button px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-indigo-600 transition duration-200'
+                historyTabBtn.className = 'flex-1 px-6 py-3 font-semibold rounded-xl bg-white text-indigo-600 shadow-md transition duration-200'
+                activeTabBtn.className = 'flex-1 px-6 py-3 font-semibold rounded-xl text-gray-600 hover:bg-white/50 transition duration-200'
                 document.getElementById('historyContent').classList.remove('hidden')
                 document.getElementById('activeContent').classList.add('hidden')
             }
@@ -128,51 +159,63 @@
 
                 if (data.parcels && data.parcels.length > 0) {
                     activeParcels.innerHTML = data.parcels.map(parcel => `
-                        <div class="border border-gray-200 rounded-xl p-6 mb-4 hover:shadow-lg transition duration-200">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="text-xl font-semibold text-gray-800">${parcel.parcel_name}</h3>
-                                    <p class="text-sm text-gray-500">Parcel ID: ${parcel.id}</p>
+                        <div class="border-2 border-gray-200 rounded-2xl p-8 mb-5 hover:shadow-2xl hover:border-indigo-300 transition-all duration-300 bg-gradient-to-br from-white to-gray-50">
+                            <div class="flex justify-between items-start mb-5">
+                                <div class="flex-1">
+                                    <h3 class="text-2xl font-bold text-gray-800 mb-2">${parcel.parcel_name}</h3>
+                                    <p class="text-sm text-gray-500 mb-1">🏷️ Parcel ID: <span class="font-mono font-semibold">${parcel.id}</span></p>
                                     ${parcel.is_delivered ? `<p class="text-sm text-gray-500">📅 Delivered: ${new Date(parcel.delivered_at).toLocaleString()}</p>` : ''}
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-sm font-medium ${parcel.is_delivered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                                    ${parcel.is_delivered ? 'Ready for pickup' : 'In transit'}
+                                <span class="px-4 py-2 rounded-full text-sm font-bold shadow-md ${parcel.is_delivered ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white' : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'}">
+                                    ${parcel.is_delivered ? '✓ Ready' : '⏳ In Transit'}
                                 </span>
                             </div>
                             
-                            <div class="bg-indigo-50 rounded-lg p-4 mb-4">
-                                <p class="text-sm text-gray-600 mb-1">Location</p>
-                                <p class="font-semibold text-indigo-600">Box ${parcel.box_name} - ${parcel.location}</p>
+                            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-5 mb-5 border border-indigo-100">
+                                <p class="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-2">📍 Collection Point</p>
+                                <p class="text-lg font-bold text-indigo-700">Box ${parcel.box_name}</p>
+                                <p class="text-sm text-gray-600">${parcel.location}</p>
                             </div>
 
                             ${parcel.is_delivered ? `
-                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                                <div class="flex">
+                            <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-400 p-5 mb-5 rounded-lg shadow-sm">
+                                <div class="flex gap-3">
                                     <div class="flex-shrink-0">
-                                        <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <svg class="h-6 w-6 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                                         </svg>
                                     </div>
-                                    <div class="ml-3">
+                                    <div>
+                                        <p class="text-sm font-semibold text-yellow-800 mb-1">⚠️ Important Notice</p>
                                         <p class="text-sm text-yellow-700">
-                                            <strong>Important:</strong> Only click "Open Box" when you are physically at the collection point and ready to collect your parcel immediately.
+                                            Only click "Open Box" when you are <span class="font-bold">physically at the collection point</span> and ready to collect your parcel immediately.
                                         </p>
                                     </div>
                                 </div>
                             </div>
                             <button 
-                                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                                class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-3"
                             >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
                                 </svg>
-                                Open Box
+                                <span class="text-lg">Unlock & Open Box</span>
                             </button>
-                        ` : '<p class="text-gray-500 text-sm text-center">Parcel is still in transit</p>'}
+                        ` : '<div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-5 text-center"><p class="text-gray-500 text-sm font-medium">📦 Parcel is still in transit to collection point</p></div>'}
                         </div>
                     `).join('')
                 } else {
-                    activeParcels.innerHTML = '<p class="text-gray-500 text-center py-8">No active parcels</p>'
+                    activeParcels.innerHTML = `
+                        <div class="text-center py-16 bg-gradient-to-br from-gray-50 to-indigo-50 rounded-2xl border-2 border-dashed border-gray-300">
+                            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full mb-4">
+                                <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                </svg>
+                            </div>
+                            <p class="text-gray-500 font-semibold text-lg">No active parcels</p>
+                            <p class="text-gray-400 text-sm mt-2">Register a parcel above to get started</p>
+                        </div>
+                    `
                 }
             } catch (e) {
                 showMessage('parcelsMessage', {
@@ -200,25 +243,48 @@
 
                 if (data.parcels && data.parcels.length > 0) {
                     historyParcels.innerHTML = data.parcels.map(parcel => `
-                        <div class="border border-gray-200 rounded-xl p-6 mb-4 bg-gray-50">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h3 class="text-xl font-semibold text-gray-800">${parcel.parcel_name}</h3>
-                                    <p class="text-sm text-gray-500">Parcel ID: ${parcel.id}</p>
+                        <div class="border-2 border-gray-200 rounded-2xl p-7 mb-4 bg-gradient-to-br from-gray-50 to-gray-100 hover:shadow-lg transition-all duration-300">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-bold text-gray-800 mb-2">${parcel.parcel_name}</h3>
+                                    <p class="text-sm text-gray-500 font-mono">🏷️ ID: ${parcel.id}</p>
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-sm font-medium bg-gray-200 text-gray-600">
-                                    Collected
+                                <span class="px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-md">
+                                    ✓ Collected
                                 </span>
                             </div>
                             
-                            <div class="text-sm text-gray-600 space-y-1">
-                                <p>📍 Box: ${parcel.box_name} - ${parcel.location}</p>
-                                <p>📅 Collected: ${new Date(parcel.collected_at).toLocaleString()}</p>
+                            <div class="bg-white rounded-xl p-4 space-y-2 border border-gray-200">
+                                <div class="flex items-center gap-2 text-gray-700">
+                                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    <span class="font-semibold text-sm">Box ${parcel.box_name}</span>
+                                    <span class="text-gray-400">•</span>
+                                    <span class="text-sm">${parcel.location}</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-gray-700">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span class="text-sm font-medium">${new Date(parcel.collected_at).toLocaleString()}</span>
+                                </div>
                             </div>
                         </div>
                     `).join('')
                 } else {
-                    historyParcels.innerHTML = '<p class="text-gray-500 text-center py-8">No collection history yet</p>'
+                    historyParcels.innerHTML = `
+                        <div class="text-center py-16 bg-gradient-to-br from-gray-50 to-slate-100 rounded-2xl border-2 border-dashed border-gray-300">
+                            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-slate-200 rounded-full mb-4">
+                                <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <p class="text-gray-500 font-semibold text-lg">No collection history yet</p>
+                            <p class="text-gray-400 text-sm mt-2">Your collected parcels will appear here</p>
+                        </div>
+                    `
                 }
             } catch (e) {
                 showMessage('parcelsMessage', {

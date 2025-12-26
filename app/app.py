@@ -8,10 +8,14 @@ import jwt
 import os
 from datetime import datetime, timedelta
 from functools import wraps
+from pubnub_config import init_pubnub, publish_message, notify_user
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config.from_object(Config)
 app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+
+# Initialize PubNub
+pubnub = init_pubnub()
 
 # Initialize database
 db = SQLAlchemy(app)
@@ -55,8 +59,8 @@ def login():
 @login_required
 def home(user):
     # Home page (protected)
-    return render_template("home.html", user=user)
-
+    pubnub_subscribe_key = os.getenv("PUBNUB_SUBSCRIBE_KEY")
+    return render_template("home.html", user=user, pubnub_subscribe_key=pubnub_subscribe_key)
 
 @app.route("/api/health")
 def health_check():
@@ -259,6 +263,66 @@ def fetch_parcels(user):
         return jsonify({"parcels": parcels_list, "type": "success"}), 200
     except Exception as e:
         return jsonify({"error": str(e), "type": "error"}), 500
+
+
+@app.route("/api/parcel-delivered", methods=["POST"])
+def parcel_delivered():
+    # Parcel delivered to box
+    try:
+        data = request.json
+        parcel_id = data.get("parcel_id")
+        
+        if not parcel_id:
+            return jsonify({"error": "Parcel ID required", "type": "error"}), 400
+        
+        # Get parcel info
+        parcel = db.session.execute(
+            text("""
+                SELECT p.id, p.user_id, p.box_id, p.parcel_name, p.is_delivered, b.box_name
+                FROM parcels p
+                JOIN boxes b ON p.box_id = b.id
+                WHERE p.id = :pid
+            """),
+            {"pid": parcel_id}
+        ).fetchone()
+        
+        if not parcel: 
+            return jsonify({"error": "Parcel not found", "type": "error"}), 400
+        
+        if parcel[4]: # is_delivered
+            return jsonify({"info": f"Parcel {parcel[3]} already delivered", "type": "info"}), 200
+        
+        # Update parcel as delivered
+        db.session.execute(
+            text("UPDATE parcels SET is_delivered = 1, delivered_at = :now WHERE id = :pid"),
+            {"now": datetime.now(), "pid": parcel_id}
+        )
+        db.session.commit()
+        
+        # Publish notification to user's channel via PubNub (if user exists)
+        if parcel[1]:  # user_id
+            notification_channel = f"user-{parcel[1]}"
+            notification_message = {
+                "type": "parcel_delivered",
+                "parcel_id": parcel[0],
+                "parcel_name": parcel[3],
+                "box_name": parcel[5],
+                "timestamp": datetime.now().isoformat()
+            }
+            pubnub.publish().channel(notification_channel).message(notification_message).sync()
+        
+        return jsonify({
+            "message": f"Parcel '{parcel[3]}' delivered to Box {parcel[5]}",
+            "type": "success",
+            "parcel": {
+                "id": parcel[0],
+                "name": parcel[3],
+                "box": parcel[5]
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e), "type": "error"}), 500    
 
 
 if __name__ == "__main__":

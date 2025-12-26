@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parsley - Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.8.2.5.min.js"></script>
 </head>
 
 <body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 min-h-screen">
@@ -31,12 +32,15 @@
             <div class="flex items-center gap-3 mb-6">
                 <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-2xl">
                     <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                 </div>
-                <h2 class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Register Your Parcel</h2>
+                <h2
+                    class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    Register Your Parcel</h2>
             </div>
-            <p class="text-gray-600 mb-8 text-base">Enter the parcel ID from your delivery notification email to track your package</p>
+            <p class="text-gray-600 mb-8 text-base">Enter the parcel ID from your delivery notification email to track
+                your package</p>
 
             <div id="registerMessage" class="mb-4"></div>
             <form id="registerParcelForm" class="space-y-5">
@@ -47,7 +51,8 @@
                             class="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-lg" />
                         <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
                             <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                             </svg>
                         </div>
                     </div>
@@ -64,32 +69,33 @@
             <div class="flex items-center gap-3 mb-8">
                 <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-2xl">
                     <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                 </div>
-                <h2 class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">My Parcels</h2>
+                <h2
+                    class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    My Parcels</h2>
             </div>
-            
+
             <!-- Tabs -->
             <div class="flex gap-2 bg-gray-100 rounded-2xl p-2 mb-8">
-                <button 
-                    id="activeTab" 
-                    onclick="switchTab('active')"
+                <button id="activeTab" onclick="switchTab('active')"
                     class="flex-1 px-6 py-3 font-semibold rounded-xl bg-white text-indigo-600 shadow-md transition duration-200">
                     <span class="flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                         </svg>
                         Active Parcels
                     </span>
                 </button>
-                <button 
-                    id="historyTab"
-                    onclick="switchTab('history')"
+                <button id="historyTab" onclick="switchTab('history')"
                     class="flex-1 px-6 py-3 font-semibold rounded-xl text-gray-600 hover:bg-white/50 transition duration-200">
                     <span class="flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         History
                     </span>
@@ -97,7 +103,7 @@
             </div>
 
             <div id="parcelsMessage" class="mb-4"></div>
-            
+
             <!-- Active Parcels Tab Content -->
             <div id="activeContent" class="tab-content">
                 <div id="activeParcels">
@@ -117,15 +123,66 @@
     <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script>
         let currentTab = 'active'
+        let pubnub = null
+        // Initialize PubNub subscription for real-time updates
+        function initPubNub(userId) {
+            const subscribeKey = '{{ pubnub_subscribe_key }}'
 
+            if (!subscribeKey || subscribeKey === 'None') {
+                console.warn('PubNub subscribe key not configured')
+                return
+            }
+
+            pubnub = new PubNub({
+                subscribeKey: subscribeKey,
+                uuid: `user-web-${userId}`
+            })
+
+            // Subscribe to user's notification channel
+            pubnub.subscribe({
+                channels: [`user-${userId}`]
+            })
+
+            // Status check
+            pubnub.addListener({
+                status: function (statusEvent) {
+                    if (statusEvent.category === "PNConnectedCategory") {
+                        console.log("✅ PubNub connected successfully")
+                    }
+                },
+                message: function (event) {
+                    console.log("📨 PubNub message received:", event.message)
+                }
+            })
+
+            // Listen for messages
+            pubnub.addListener({
+                message: function (event) {
+                    console.log('PubNub message received:', event)
+
+                    if (event.message.type === 'parcel_delivered') {
+                        // Show notification
+                        showMessage('parcelsMessage', {
+                            message: `📦 Your parcel "${event.message.parcel_name}" has been delivered to ${event.message.box_name}!`,
+                            type: 'success'
+                        })
+
+                        // Refresh parcel list
+                        if (currentTab === 'active') {
+                            fetchActiveParcels()
+                        }
+                    }
+                }
+            })
+        }
         // Switch between tabs
         function switchTab(tab) {
             currentTab = tab
-            
+
             // Update tab buttons
             const activeTabBtn = document.getElementById('activeTab')
             const historyTabBtn = document.getElementById('historyTab')
-            
+
             if (tab === 'active') {
                 activeTabBtn.className = 'flex-1 px-6 py-3 font-semibold rounded-xl bg-white text-indigo-600 shadow-md transition duration-200'
                 historyTabBtn.className = 'flex-1 px-6 py-3 font-semibold rounded-xl text-gray-600 hover:bg-white/50 transition duration-200'
@@ -137,7 +194,7 @@
                 document.getElementById('historyContent').classList.remove('hidden')
                 document.getElementById('activeContent').classList.add('hidden')
             }
-            
+
             // Clear messages
             document.getElementById('parcelsMessage').innerHTML = ''
         }
@@ -325,6 +382,9 @@
         // Load active parcels on page load
         fetchActiveParcels()
         fetchHistoryParcels()
+
+        const userId = "{{ user.user_id }}"
+        initPubNub(userId)
     </script>
 </body>
 

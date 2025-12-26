@@ -121,60 +121,9 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pubnub_client.js') }}"></script>
     <script>
         let currentTab = 'active'
-        let pubnub = null
-        // Initialize PubNub subscription for real-time updates
-        function initPubNub(userId) {
-            const subscribeKey = '{{ pubnub_subscribe_key }}'
-
-            if (!subscribeKey || subscribeKey === 'None') {
-                console.warn('PubNub subscribe key not configured')
-                return
-            }
-
-            pubnub = new PubNub({
-                subscribeKey: subscribeKey,
-                uuid: `user-web-${userId}`
-            })
-
-            // Subscribe to user's notification channel
-            pubnub.subscribe({
-                channels: [`user-${userId}`]
-            })
-
-            // Status check
-            pubnub.addListener({
-                status: function (statusEvent) {
-                    if (statusEvent.category === "PNConnectedCategory") {
-                        console.log("✅ PubNub connected successfully")
-                    }
-                },
-                message: function (event) {
-                    console.log("📨 PubNub message received:", event.message)
-                }
-            })
-
-            // Listen for messages
-            pubnub.addListener({
-                message: function (event) {
-                    console.log('PubNub message received:', event)
-
-                    if (event.message.type === 'parcel_delivered') {
-                        // Show notification
-                        showMessage('parcelsMessage', {
-                            message: `📦 Your parcel "${event.message.parcel_name}" has been delivered to ${event.message.box_name}!`,
-                            type: 'success'
-                        })
-
-                        // Refresh parcel list
-                        if (currentTab === 'active') {
-                            fetchActiveParcels()
-                        }
-                    }
-                }
-            })
-        }
         // Switch between tabs
         function switchTab(tab) {
             currentTab = tab
@@ -383,8 +332,22 @@
         fetchActiveParcels()
         fetchHistoryParcels()
 
+        // Initialize PubNub for real-time notifications
         const userId = "{{ user.user_id }}"
-        initPubNub(userId)
+        const subscribeKey = '{{ pubnub_subscribe_key }}'
+        
+        initPubNub(userId, subscribeKey, function(parcelInfo) {
+            // Show notification when parcel is delivered
+            showMessage('parcelsMessage', {
+                message: `📦 Your parcel "${parcelInfo.parcel_name}" has been delivered to ${parcelInfo.box_name}!`,
+                type: 'success'
+            })
+
+            // Refresh parcel list if on active tab
+            if (currentTab === 'active') {
+                fetchActiveParcels()
+            }
+        })
     </script>
 </body>
 

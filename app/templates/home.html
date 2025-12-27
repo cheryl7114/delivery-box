@@ -200,6 +200,7 @@
                                 </div>
                             </div>
                             <button 
+                                onclick="unlockBox('${parcel.id}', '${parcel.box_id}')"
                                 class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-3"
                             >
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,8 +336,8 @@
         // Initialize PubNub for real-time notifications
         const userId = "{{ user.user_id }}"
         const subscribeKey = '{{ pubnub_subscribe_key }}'
-        
-        initPubNub(userId, subscribeKey, function(parcelInfo) {
+
+        initPubNub(userId, subscribeKey, function (parcelInfo) {
             // Show notification when parcel is delivered
             showMessage('parcelsMessage', {
                 message: `📦 Your parcel "${parcelInfo.parcel_name}" has been delivered to ${parcelInfo.box_name}!`,
@@ -348,6 +349,38 @@
                 fetchActiveParcels()
             }
         })
+
+        async function unlockBox(parcelId, boxId) {
+            try {
+                const response = await fetch("/api/open-box", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ parcel_id: parcelId})
+                })
+
+                const data = await response.json()
+                showMessage('parcelsMessage', data)
+
+                if (data.type === 'success') {
+            // Show lock button after unlocking
+            showMessage('parcelsMessage', {
+                message: `Box unlocked! Don't forget to lock it after collecting your parcel.`,
+                type: 'info'
+            })
+            
+            // Optionally show a lock button or auto-refresh after some time
+            setTimeout(() => {
+                fetchActiveParcels()
+                fetchHistoryParcels()
+            }, 2000)
+        }
+            } catch (e) {
+                showMessage('parcelsMessage', {
+                    error: 'Connection error. Please try again.',
+                    type: 'error'
+                })
+            }
+        }
     </script>
 </body>
 

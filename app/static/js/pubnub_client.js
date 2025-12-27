@@ -5,7 +5,7 @@
 
 let pubnub = null
 
-function initPubNub(userId, subscribeKey, onParcelDelivered) {
+function initPubNub(userId, subscribeKey, callbacks) {
     if (!subscribeKey || subscribeKey === 'None') {
         console.warn('PubNub subscribe key not configured')
         return
@@ -30,23 +30,19 @@ function initPubNub(userId, subscribeKey, onParcelDelivered) {
         },
         message: function (event) {
             console.log("📨 PubNub message received:", event.message)
-            handlePubNubMessage(event, onParcelDelivered)
+            handlePubNubMessage(event, callbacks)
         }
     })
 }
 
 
-function handlePubNubMessage(event, onParcelDelivered) {
-    console.log('PubNub message received:', event)
-
-    if (event.message.type === 'parcel_delivered') {
-        // Trigger the callback with parcel information
-        if (onParcelDelivered && typeof onParcelDelivered === 'function') {
-            onParcelDelivered({
-                parcel_name: event.message.parcel_name,
-                box_name: event.message.box_name
-            })
-        }
+function handlePubNubMessage(event, callbacks) {
+    console.log('📨 PubNub message received:', event.message)
+    
+    const messageType = event.message.type
+    
+    if (messageType === 'parcel_delivered' && callbacks.onParcelDelivered) {
+        callbacks.onParcelDelivered(event.message)
     }
 }
 

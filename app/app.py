@@ -237,7 +237,7 @@ def fetch_parcels(user):
             # Get active parcels (not collected)
             query = text("""
                 SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at, p.delivered_at,
-                b.box_name, b.location
+                b.box_name, b.location, b.id as box_id
                 FROM parcels p
                 JOIN boxes b ON p.box_id = b.id
                 WHERE p.user_id = :user_id AND p.collected_at IS NULL
@@ -256,6 +256,7 @@ def fetch_parcels(user):
                 "delivered_at": p[4],
                 "box_name": p[5],
                 "location": p[6],
+                "box_id": p[7]
             }
             for p in parcels
         ]
@@ -323,6 +324,57 @@ def parcel_delivered():
         
     except Exception as e:
         return jsonify({"error": str(e), "type": "error"}), 500    
+
+
+@app.route("/api/open-box", methods=["POST"])
+@login_required
+def open_box(user):
+    # Unlock box
+    try:
+        parcel_id = request.json.get("parcel_id")
+        
+        if not parcel_id:
+            return jsonify({"error": "Parcel ID required", "type": "error"})
+        
+         # Get parcel and verify ownership
+        parcel = db.session.execute(
+            text("""
+                SELECT p.id, p.box_id, p.is_delivered, p.collected_at, b.box_name 
+                FROM parcels p 
+                JOIN boxes b ON p.box_id = b.id 
+                WHERE p.id = :pid AND p.user_id = :uid
+            """),
+            {"pid": parcel_id, "uid": user["user_id"]}
+        ).fetchone()
+
+        if not parcel:
+            return jsonify({"error": "Parcel not found", "type": "error"}), 404
+
+        if not parcel[2]:  # is_delivered
+            return jsonify({"error": "Parcel not yet delivered to box", "type": "error"}), 400
+
+        if parcel[3]:  # collected_at
+            return jsonify({"info": "Parcel already collected", "type": "info"}), 200
+
+        # Publish unlock message to PubNub
+        channel = f"box-{parcel[1]}"
+        message = {
+            "action": "unlock",
+            "parcel_id": parcel_id,
+            "box_id": parcel[1],
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        publish_message(pubnub, channel, message)
+        
+        return jsonify({
+            "message": f"Box {parcel[4]} is unlocking... Please collect your parcel.",
+            "type": "success",
+            "box_id": parcel[1]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e), "type": "error"}), 500      
 
 
 if __name__ == "__main__":

@@ -10,6 +10,9 @@
 </head>
 
 <body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 min-h-screen">
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-3 max-w-md"></div>
+
     <!-- Navigation Bar -->
     <nav class="bg-white shadow-md">
         <div class="mx-auto px-4 max-w-7xl sm:px-6 lg:px-8 py-4 font-bold">
@@ -123,6 +126,48 @@
     <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/pubnub_client.js') }}"></script>
     <script>
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer')
+            const toast = document.createElement('div')
+            toast.className = 'transform transition-all duration-300 ease-in-out translate-x-full opacity-0'
+            
+            const bgColors = {
+                success: 'bg-gradient-to-r from-green-500 to-emerald-600',
+                error: 'bg-gradient-to-r from-red-500 to-rose-600',
+                info: 'bg-gradient-to-r from-blue-500 to-indigo-600'
+            }
+            
+            const icons = {
+                success: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>',
+                error: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>',
+                info: '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>'
+            }
+            
+            toast.innerHTML = `
+                <div class="${bgColors[type] || bgColors.info} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 min-w-[320px]">
+                    <div class="flex-shrink-0">${icons[type] || icons.info}</div>
+                    <p class="flex-1 font-medium text-sm">${message}</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 hover:bg-white/20 rounded-lg p-1 transition">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    </button>
+                </div>
+            `
+            
+            toastContainer.appendChild(toast)
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0')
+            }, 10)
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0')
+                setTimeout(() => toast.remove(), 300)
+            }, 5000)
+        }
+
         let currentTab = 'active'
         // Switch between tabs
         function switchTab(tab) {
@@ -325,7 +370,7 @@
                 }
             } catch (e) {
                 showMessage('registerMessage', {
-                    error: 'Connection error. Please refresh.',
+                    error: 'Connection error. Please try again.',
                     type: 'error'
                 })
             }
@@ -339,16 +384,18 @@
         const userId = "{{ user.user_id }}"
         const subscribeKey = '{{ pubnub_subscribe_key }}'
 
-        initPubNub(userId, subscribeKey, function (parcelInfo) {
-            // Show notification when parcel is delivered
-            showMessage('parcelsMessage', {
-                message: `📦 Your parcel "${parcelInfo.parcel_name}" has been delivered to ${parcelInfo.box_name}!`,
-                type: 'success'
-            })
+        initPubNub(userId, subscribeKey, {
+            onParcelDelivered: function (parcelInfo) {
+                // Show notification when parcel is delivered
+                showMessage('parcelsMessage', {
+                    message: `📦 Your parcel "${parcelInfo.parcel_name}" has been delivered to ${parcelInfo.box_name}!`,
+                    type: 'success'
+                })
 
-            // Refresh parcel list if on active tab
-            if (currentTab === 'active') {
-                fetchActiveParcels()
+                // Refresh parcel list if on active tab
+                if (currentTab === 'active') {
+                    fetchActiveParcels()
+                }
             }
         })
 
@@ -361,7 +408,8 @@
                 })
 
                 const data = await response.json()
-                showMessage('parcelsMessage', data)
+                if (data.message) showToast(data.message, data.type)
+                else if (data.error) showToast(data.error, data.type)
 
                 if (data.type === 'success') {
                     // Replace unlock button with lock and collected buttons
@@ -390,16 +438,9 @@
                         `
                     }
 
-                    showMessage('parcelsMessage', {
-                        message: `Box unlocked! Click "Collected" after removing your parcel.`,
-                        type: 'info'
-                    })
                 }
             } catch (e) {
-                showMessage('parcelsMessage', {
-                    error: 'Connection error. Please try again.',
-                    type: 'error'
-                })
+                showToast('Connection error. Please try again.', 'error')
             }
         }
 
@@ -412,6 +453,9 @@
                 })
 
                 const data = await response.json()
+                if (data.message) showToast(data.message, data.type)
+                else if (data.error) showToast(data.error, data.type)
+                
                 if (data.type === 'success') {
                     // Replace lock/collected buttons with unlock button
                     const buttonsContainer = document.getElementById(`buttons-${parcelId}`)
@@ -429,12 +473,8 @@
                         `
                     }
                 }
-                showMessage('parcelsMessage', data)
             } catch (e) {
-                showMessage('parcelsMessage', {
-                    error: 'Connection error. Please try again.',
-                    type: 'error'
-                })
+                showToast('Connection error. Please try again.', 'error')
             }
         }
     </script>

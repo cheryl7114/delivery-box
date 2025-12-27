@@ -194,21 +194,23 @@
                                     <div>
                                         <p class="text-sm font-semibold text-yellow-800 mb-1">⚠️ Important Notice</p>
                                         <p class="text-sm text-yellow-700">
-                                            Only click "Open Box" when you are <span class="font-bold">physically at the collection point</span> and ready to collect your parcel immediately.
+                                            Only click "Unlock Box" when you are <span class="font-bold">physically at the collection point</span> and ready to collect your parcel immediately.
                                         </p>
                                     </div>
                                 </div>
                             </div>
-                            <button 
-                                onclick="unlockBox('${parcel.id}', '${parcel.box_id}')"
-                                class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-3"
-                            >
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
-                                </svg>
-                                <span>Unlock Box</span>
-                            </button>
-                        ` : '<div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-5 text-center"><p class="text-gray-500 text-sm font-medium">📦 Parcel is still in transit to collection point</p></div>'}
+                            <div id="buttons-${parcel.id}">
+                                <button 
+                                    onclick="unlockBox('${parcel.id}', '${parcel.box_id}')"
+                                    class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-3"
+                                >
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span>Unlock Box</span>
+                                </button>
+                            </div>
+                            ` : '<div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-5 text-center"><p class="text-gray-500 text-sm font-medium">📦 Parcel is still in transit to collection point</p></div>'}
                         </div>
                     `).join('')
                 } else {
@@ -354,26 +356,80 @@
             try {
                 const response = await fetch("/api/open-box", {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ parcel_id: parcelId})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ parcel_id: parcelId })
                 })
 
                 const data = await response.json()
                 showMessage('parcelsMessage', data)
 
                 if (data.type === 'success') {
-            // Show lock button after unlocking
-            showMessage('parcelsMessage', {
-                message: `Box unlocked! Don't forget to lock it after collecting your parcel.`,
-                type: 'info'
-            })
-            
-            // Optionally show a lock button or auto-refresh after some time
-            setTimeout(() => {
-                fetchActiveParcels()
-                fetchHistoryParcels()
-            }, 2000)
+                    // Replace unlock button with lock and collected buttons
+                    const buttonsContainer = document.getElementById(`buttons-${parcelId}`)
+                    if (buttonsContainer) {
+                        buttonsContainer.innerHTML = `
+                            <div class="grid grid-cols-2 gap-3">
+                                <button 
+                                    onclick="lockBox('${parcelId}', '${boxId}')"
+                                    class="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                    <span>Lock Box</span>
+                                </button>
+                                <button 
+                                    class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span>Collected</span>
+                                </button>
+                            </div>
+                        `
+                    }
+
+                    showMessage('parcelsMessage', {
+                        message: `Box unlocked! Click "Collected" after removing your parcel.`,
+                        type: 'info'
+                    })
+                }
+            } catch (e) {
+                showMessage('parcelsMessage', {
+                    error: 'Connection error. Please try again.',
+                    type: 'error'
+                })
+            }
         }
+
+        async function lockBox(parcelId, boxId) {
+            try {
+                const response = await fetch('/api/lock-box', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ box_id: boxId })
+                })
+
+                const data = await response.json()
+                if (data.type === 'success') {
+                    // Replace lock/collected buttons with unlock button
+                    const buttonsContainer = document.getElementById(`buttons-${parcelId}`)
+                    if (buttonsContainer) {
+                        buttonsContainer.innerHTML = `
+                            <button 
+                                onclick="unlockBox('${parcelId}', '${boxId}')"
+                                class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-3"
+                            >
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                                </svg>
+                                <span>Unlock Box</span>
+                            </button>
+                        `
+                    }
+                }
+                showMessage('parcelsMessage', data)
             } catch (e) {
                 showMessage('parcelsMessage', {
                     error: 'Connection error. Please try again.',

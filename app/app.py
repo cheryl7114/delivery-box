@@ -227,7 +227,7 @@ def fetch_parcels(user):
             # Get collected parcels
             query = text("""
                 SELECT p.id, p.parcel_name, p.is_delivered, p.collected_at, p.delivered_at,
-                b.box_name, b.location
+                b.box_name, b.location, b.id as box_id
                 FROM parcels p
                 JOIN boxes b ON p.box_id = b.id
                 WHERE p.user_id = :user_id AND p.collected_at IS NOT NULL
@@ -375,6 +375,49 @@ def open_box(user):
         
     except Exception as e:
         return jsonify({"error": str(e), "type": "error"}), 500      
+
+
+@app.route("/api/lock-box", methods=["POST"])
+@login_required
+def lock_box(user):
+    # Lock box via PubNub
+    try:
+        box_id = request.json.get("box_id")
+        
+        if not box_id:
+            return jsonify({"error": "Box ID required", "type": "error"})
+        
+        # Verify user has permission (has/had parcel in this box)
+        parcel = db.session.execute(
+            text("""
+                SELECT p.id, b.box_name
+                FROM parcels p 
+                JOIN boxes b ON p.box_id = b.id 
+                WHERE p.box_id = :bid AND p.user_id = :uid
+                LIMIT 1
+            """),
+            {"bid": box_id, "uid": user["user_id"]}
+        ).fetchone()
+
+        if not parcel: 
+            return jsonify({"error": "You don't have permission to lock this box", "type": "error"}), 403
+        
+        # Publish lock message to PubNub
+        channel = f"box-{box_id}"
+        message = {
+            "action": "lock",
+            "box_id": box_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        publish_message(pubnub, channel, message)
+        
+        return jsonify({
+            "message": f"Box {parcel[1]} is locking...",
+            "type": "success"
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e), "type": "error"}), 500  
 
 
 if __name__ == "__main__":

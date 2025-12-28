@@ -6,26 +6,23 @@ After=network.target mysql.service
 Type=notify
 User=ubuntu
 Group=www-data
-WorkingDirectory=/home/ubuntu/delivery-box
-Environment="PATH=/home/ubuntu/delivery-box/venv/bin"
-EnvironmentFile=/home/ubuntu/delivery-box/.env
+WorkingDirectory=/var/www/delivery-box
+Environment="PATH=/var/www/delivery-box/venv/bin"
+EnvironmentFile=/var/www/delivery-box/.env
 
-# Gunicorn command
-ExecStart=/home/ubuntu/delivery-box/venv/bin/gunicorn \
+ExecStart=/var/www/delivery-box/venv/bin/gunicorn \
     --workers 4 \
     --worker-class sync \
-    --bind 127.0.0.1:8000 \
+    --bind unix:/var/www/delivery-box/delivery-box.sock \
     --timeout 60 \
     --access-logfile /var/log/delivery-box/access.log \
     --error-logfile /var/log/delivery-box/error.log \
     --log-level info \
     wsgi:app
 
-# Restart policy
 Restart=always
 RestartSec=10
 
-# Security
 NoNewPrivileges=true
 PrivateTmp=true
 

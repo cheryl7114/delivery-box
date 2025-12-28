@@ -6,7 +6,7 @@ After=network.target mysql.service
 Type=simple
 User=ubuntu
 Group=www-data
-WorkingDirectory=/var/www/delivery-box
+WorkingDirectory=/var/www/delivery-box/app
 Environment="PATH=/var/www/delivery-box/venv/bin"
 EnvironmentFile=/var/www/delivery-box/app/.env
 
@@ -19,7 +19,7 @@ ExecStart=/var/www/delivery-box/venv/bin/gunicorn \
     --access-logfile /var/log/delivery-box/access.log \
     --error-logfile /var/log/delivery-box/error.log \
     --log-level info \
-    wsgi:application
+    wsgi:app
 
 Restart=always
 RestartSec=10

@@ -3,7 +3,7 @@ Description=Delivery Box Flask Application
 After=network.target mysql.service
 
 [Service]
-Type=notify
+Type=simple
 User=ubuntu
 Group=www-data
 WorkingDirectory=/var/www/delivery-box
@@ -11,14 +11,15 @@ Environment="PATH=/var/www/delivery-box/venv/bin"
 EnvironmentFile=/var/www/delivery-box/.env
 
 ExecStart=/var/www/delivery-box/venv/bin/gunicorn \
-    --workers 4 \
+    --workers 3 \
     --worker-class sync \
     --bind unix:/var/www/delivery-box/delivery-box.sock \
+    --umask 007 \
     --timeout 60 \
     --access-logfile /var/log/delivery-box/access.log \
     --error-logfile /var/log/delivery-box/error.log \
     --log-level info \
-    wsgi:app
+    wsgi:application
 
 Restart=always
 RestartSec=10

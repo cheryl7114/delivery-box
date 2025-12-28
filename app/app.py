@@ -138,7 +138,7 @@ def google_auth():
             "token",
             jwt_token,
             httponly=True,
-            secure=False,
+            secure=True,  # Requires HTTPS (Nginx will handle SSL)
             samesite="Lax",
             max_age=604800,
         )
@@ -421,4 +421,5 @@ def lock_box(user):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    # For local development only
+    app.run(debug=True, host='0.0.0.0', port=5001)

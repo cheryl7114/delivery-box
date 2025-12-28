@@ -14,4 +14,4 @@ class Config:
     # SQLAlchemy configuration
     SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = True  # Log all SQL queries
+    SQLALCHEMY_ECHO = os.getenv('FLASK_ENV') == 'development'  # Only log SQL in development

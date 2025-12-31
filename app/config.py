@@ -2,8 +2,11 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import quote_plus
 
-# Get the directory of this file and load .env from there
-load_dotenv('/var/www/delivery-box/app/.env')
+# Get the directory of this file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Load .env from the same directory as config.py
+load_dotenv(os.path.join(current_dir, '.env'))
 
 class Config:
     """Database configuration"""

@@ -420,6 +420,50 @@ def lock_box(user):
         return jsonify({"error": str(e), "type": "error"}), 500  
 
 
+@app.route("/api/mark-collected", methods=["POST"])
+@login_required
+def mark_collected(user):
+    # Mark parcel as collected
+    try:
+        parcel_id = request.json.get("parcel_id")
+        
+        if not parcel_id:
+            return jsonify({"error": "Parcel ID required", "type": "error"}), 400
+        
+        # Get parcel and check if parcel belongs to this user
+        parcel = db.session.execute(
+            text("""
+                SELECT p.id, p.is_delivered, p.collected_at, p.parcel_name
+                FROM parcels p 
+                WHERE p.id = :pid AND p.user_id = :uid
+            """),
+            {"pid": parcel_id, "uid": user["user_id"]}
+        ).fetchone()
+        
+        if not parcel:
+            return jsonify({"error": "Parcel not found", "type": "error"}), 404
+
+        if not parcel[1]:  # is_delivered
+            return jsonify({"error": "Parcel not yet delivered", "type": "error"}), 400
+
+        if parcel[2]:  # collected_at
+            return jsonify({"info": "Parcel already marked as collected", "type": "info"}), 200
+
+        db.session.execute(
+            text("UPDATE parcels SET collected_at = :now WHERE id = :pid"),
+            {"now": datetime.now(), "pid": parcel_id}
+        )
+        db.session.commit()
+        
+        return jsonify({
+            "message": f"Parcel '{parcel[3]}' marked as collected!",
+            "type": "success"
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e), "type": "error"}), 500         
+
+
 if __name__ == "__main__":
     # For local development only
     app.run(debug=True, host='0.0.0.0', port=5001)

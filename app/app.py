@@ -322,7 +322,7 @@ def parcel_delivered():
         db.session.commit()
         
         # Publish notification to user's channel via PubNub (if user exists)
-        if parcel[1]:  # user_id
+        if parcel[1] and pubnub:  # user_id and pubnub initialized
             notification_channel = f"user-{parcel[1]}"
             notification_message = {
                 "type": "parcel_delivered",
@@ -331,7 +331,7 @@ def parcel_delivered():
                 "box_name": parcel[5],
                 "timestamp": datetime.now().isoformat()
             }
-            pubnub.publish().channel(notification_channel).message(notification_message).sync()
+            publish_message(pubnub, notification_channel, notification_message)
         
         return jsonify({
             "message": f"Parcel '{parcel[3]}' delivered to Box {parcel[5]}",

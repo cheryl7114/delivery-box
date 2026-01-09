@@ -293,6 +293,27 @@ def parcel_delivered():
         if parcel[4]: # is_delivered
             return jsonify({"info": f"Parcel {parcel[3]} already delivered", "type": "info"}), 200
         
+        # Check if box already has an uncollected parcel
+        existing_parcel = db.session.execute(
+            text("""
+                SELECT p.id, p.parcel_name, p.user_id, u.name
+                FROM parcels p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.box_id = :box_id 
+                AND p.is_delivered = 1 
+                AND p.collected_at IS NULL
+                LIMIT 1
+            """),
+            {"box_id": parcel[2]}
+        ).fetchone()
+        
+        if existing_parcel:
+            user_info = f" (registered to {existing_parcel[3]})" if existing_parcel[2] else " (unregistered)"
+            return jsonify({
+                "error": f"Box {parcel[5]} is currently occupied by parcel '{existing_parcel[1]}'{user_info}. Please wait for collection.",
+                "type": "error"
+            }), 400
+        
         # Update parcel as delivered
         db.session.execute(
             text("UPDATE parcels SET is_delivered = 1, delivered_at = :now WHERE id = :pid"),
@@ -323,8 +344,9 @@ def parcel_delivered():
         }), 200
         
     except Exception as e:
-        return jsonify({"error": str(e), "type": "error"}), 500    
-
+        db.session.rollback()
+        return jsonify({"error": str(e), "type": "error"}), 500
+    
 
 @app.route("/api/open-box", methods=["POST"])
 @login_required

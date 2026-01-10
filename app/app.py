@@ -266,6 +266,37 @@ def fetch_parcels(user):
         return jsonify({"error": str(e), "type": "error"}), 500
 
 
+@app.route("/api/box/<int:box_id>/expected-parcel", methods=["GET"])
+def get_expected_parcel(box_id):
+    """Get the parcel expected to be delivered to a specific box"""
+    try:
+        # Find a parcel assigned to this box that hasn't been delivered yet
+        parcel = db.session.execute(
+            text("""
+                SELECT p.id, p.parcel_name, p.user_id
+                FROM parcels p
+                WHERE p.box_id = :box_id 
+                AND p.is_delivered = 0
+                AND p.user_id IS NOT NULL
+                ORDER BY p.id ASC
+                LIMIT 1
+            """),
+            {"box_id": box_id}
+        ).fetchone()
+        
+        if parcel:
+            return jsonify({
+                "parcel_id": parcel[0],
+                "parcel_name": parcel[1],
+                "user_id": parcel[2]
+            }), 200
+        else:
+            return jsonify({"parcel_id": None, "message": "No parcel expected in this box"}), 200
+            
+    except Exception as e:
+        return jsonify({"error": str(e), "type": "error"}), 500
+
+
 @app.route("/api/parcel-delivered", methods=["POST"])
 def parcel_delivered():
     # Parcel delivered to box
@@ -293,6 +324,27 @@ def parcel_delivered():
         if parcel[4]: # is_delivered
             return jsonify({"info": f"Parcel {parcel[3]} already delivered", "type": "info"}), 200
         
+        # Check if box already has an uncollected parcel
+        existing_parcel = db.session.execute(
+            text("""
+                SELECT p.id, p.parcel_name, p.user_id, u.name
+                FROM parcels p
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.box_id = :box_id 
+                AND p.is_delivered = 1 
+                AND p.collected_at IS NULL
+                LIMIT 1
+            """),
+            {"box_id": parcel[2]}
+        ).fetchone()
+        
+        if existing_parcel:
+            user_info = f" (registered to {existing_parcel[3]})" if existing_parcel[2] else " (unregistered)"
+            return jsonify({
+                "error": f"Box {parcel[5]} is currently occupied by parcel '{existing_parcel[1]}'{user_info}. Please wait for collection.",
+                "type": "error"
+            }), 400
+        
         # Update parcel as delivered
         db.session.execute(
             text("UPDATE parcels SET is_delivered = 1, delivered_at = :now WHERE id = :pid"),
@@ -301,7 +353,7 @@ def parcel_delivered():
         db.session.commit()
         
         # Publish notification to user's channel via PubNub (if user exists)
-        if parcel[1]:  # user_id
+        if parcel[1] and pubnub:  # user_id and pubnub initialized
             notification_channel = f"user-{parcel[1]}"
             notification_message = {
                 "type": "parcel_delivered",
@@ -310,7 +362,7 @@ def parcel_delivered():
                 "box_name": parcel[5],
                 "timestamp": datetime.now().isoformat()
             }
-            pubnub.publish().channel(notification_channel).message(notification_message).sync()
+            publish_message(pubnub, notification_channel, notification_message)
         
         return jsonify({
             "message": f"Parcel '{parcel[3]}' delivered to Box {parcel[5]}",
@@ -323,8 +375,9 @@ def parcel_delivered():
         }), 200
         
     except Exception as e:
-        return jsonify({"error": str(e), "type": "error"}), 500    
-
+        db.session.rollback()
+        return jsonify({"error": str(e), "type": "error"}), 500
+    
 
 @app.route("/api/open-box", methods=["POST"])
 @login_required
@@ -418,6 +471,95 @@ def lock_box(user):
         }), 200
     except Exception as e:
         return jsonify({"error": str(e), "type": "error"}), 500  
+
+
+@app.route("/api/mark-collected", methods=["POST"])
+@login_required
+def mark_collected(user):
+    # Mark parcel as collected
+    try:
+        parcel_id = request.json.get("parcel_id")
+        force = request.json.get("force", False)  # Allow forcing collection even with weight
+        
+        if not parcel_id:
+            return jsonify({"error": "Parcel ID required", "type": "error"}), 400
+        
+        # Get parcel and check if parcel belongs to this user
+        parcel = db.session.execute(
+            text("""
+                SELECT p.id, p.is_delivered, p.collected_at, p.parcel_name, p.box_id
+                FROM parcels p 
+                WHERE p.id = :pid AND p.user_id = :uid
+            """),
+            {"pid": parcel_id, "uid": user["user_id"]}
+        ).fetchone()
+        
+        if not parcel:
+            return jsonify({"error": "Parcel not found", "type": "error"}), 404
+
+        if not parcel[1]:  # is_delivered
+            return jsonify({"error": "Parcel not yet delivered", "type": "error"}), 400
+
+        if parcel[2]:  # collected_at
+            return jsonify({"info": "Parcel already marked as collected", "type": "info"}), 200
+
+        # If not forcing, request weight check from load cell
+        if not force:
+            # Send PubNub message to load cell to check weight
+            channel = f"load-cell-control-{parcel[4]}"  # box_id
+            message = {
+                "action": "check_weight",
+                "parcel_id": parcel_id,
+                "user_id": user["user_id"],
+                "timestamp": datetime.now().isoformat()
+            }
+            publish_message(pubnub, channel, message)
+            
+            # Return a special response that tells frontend to wait for weight check
+            return jsonify({
+                "type": "weight_check",
+                "message": "Checking if parcel was removed...",
+                "parcel_id": parcel_id
+            }), 200
+        
+        # Force collection (user confirmed despite weight)
+        db.session.execute(
+            text("UPDATE parcels SET collected_at = :now WHERE id = :pid"),
+            {"now": datetime.now(), "pid": parcel_id}
+        )
+        db.session.commit()
+        
+        # Notify load cell to reset weight
+        channel = f"load-cell-control-{parcel[4]}"
+        message = {
+            "action": "reset",
+            "timestamp": datetime.now().isoformat()
+        }
+        publish_message(pubnub, channel, message)
+        
+        return jsonify({
+            "message": f"Parcel '{parcel[3]}' marked as collected!",
+            "type": "success"
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e), "type": "error"}), 500
+
+
+@app.route("/api/weight-response", methods=["POST"])
+def weight_response():
+    """Receive weight check response from load cell"""
+    try:
+        data = request.json
+        parcel_id = data.get("parcel_id")
+        has_weight = data.get("has_weight")
+        weight = data.get("weight", 0)
+        
+        # This will be handled by frontend via PubNub
+        # Just acknowledge receipt
+        return jsonify({"status": "received"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500         
 
 
 if __name__ == "__main__":

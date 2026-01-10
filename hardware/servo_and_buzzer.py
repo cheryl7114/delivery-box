@@ -88,13 +88,23 @@ class ServoListener(SubscribeCallback):
 
 def init_pubnub():
     """Initialize PubNub connection"""
+    token = os.getenv('PUBNUB_TOKEN')  # PAM token
+    
     pnconfig = PNConfiguration()
     pnconfig.subscribe_key = os.getenv('PUBNUB_SUBSCRIBE_KEY')
     pnconfig.publish_key = os.getenv('PUBNUB_PUBLISH_KEY')
-    pnconfig.uuid = f"box-{BOX_ID}"
+    pnconfig.user_id = f"box-{BOX_ID}-device"  # Must match token's authorized_uuid
     pnconfig.ssl = True
     
     pubnub = PubNub(pnconfig)
+    
+    # Set PAM token if available
+    if token:
+        pubnub.set_token(token)
+        print(f"🔐 PAM token enabled for box-{BOX_ID}-device")
+    else:
+        print("⚠️ No PAM token - connection may fail if Access Manager is enabled")
+    
     pubnub.add_listener(ServoListener())
     
     return pubnub

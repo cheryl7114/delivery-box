@@ -59,7 +59,7 @@ class LoadCellSensor:
             if is_empty:
                 print("Box is empty")
             else:
-                print("Weight present - parcel detected")
+                print("Weight detected - parcel present")
             self.was_empty = is_empty
         
         return is_empty
@@ -73,7 +73,7 @@ class LoadCellSensor:
         
         # Detect if weight increased above delivery threshold
         if current_weight >= DELIVERY_THRESHOLD and self.previous_weight < DELIVERY_THRESHOLD:
-            print(f"🚨 DELIVERY DETECTED! Weight: {current_weight:.1f}g")
+            print("🚨 DELIVERY DETECTED!")
             self.delivery_detected = True
             self.previous_weight = current_weight
             return True
@@ -184,10 +184,11 @@ def monitor_deliveries(sensor, pubnub):
                 if parcel_id:
                     print(f"Found expected parcel: {parcel_id}")
                     
-                    # Notify via PubNub
+                    # Notify via both HTTP and PubNub
+                    http_success = notify_delivery_http(BOX_ID, parcel_id)
                     pubnub_success = notify_delivery_pubnub(pubnub, BOX_ID, parcel_id)
                     
-                    if pubnub_success:
+                    if http_success or pubnub_success:
                         print("✅ Delivery notification sent successfully")
                 else:
                     print("⚠️ No parcel expected in this box. Delivery not recorded.")

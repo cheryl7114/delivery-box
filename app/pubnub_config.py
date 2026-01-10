@@ -16,17 +16,56 @@ def init_pubnub():
         print("⚠️ PubNub keys not configured - notifications disabled")
         return None
     
+    if not secret_key:
+        print("⚠️ PubNub secret key not set - PAM may block requests")
+    
     pnconfig = PNConfiguration()
     pnconfig.subscribe_key = subscribe_key
     pnconfig.publish_key = publish_key
-    pnconfig.secret_key = secret_key  # Required for PAM
-    pnconfig.uuid = "delivery-box-server"
+    pnconfig.secret_key = secret_key  # Required for PAM token generation
+    pnconfig.user_id = "delivery-box-server"  # Changed from uuid
     pnconfig.ssl = True
     pnconfig.connect_timeout = 10
     pnconfig.non_subscribe_request_timeout = 10
     pnconfig.reconnect_policy = PNReconnectionPolicy.LINEAR
     
-    return PubNub(pnconfig)
+    pubnub = PubNub(pnconfig)
+    
+    # Generate and set a server token with full permissions
+    if secret_key:
+        try:
+            server_token = _generate_server_token(pubnub)
+            if server_token:
+                pubnub.set_token(server_token)
+                print("🔐 Server token generated and set successfully")
+        except Exception as e:
+            print(f"⚠️ Failed to generate server token: {e}")
+    
+    return pubnub
+
+def _generate_server_token(pubnub, ttl=43200):
+    """Generate a token for the server with full permissions (30 days)"""
+    try:
+        # Server needs access to all channels via patterns
+        channels = [
+            Channel.pattern("box-.*").read().write(),           # All box channels
+            Channel.pattern("user-.*").read().write(),          # All user channels  
+            Channel.pattern("load-cell-control-.*").read().write(),  # All load cell channels
+            Channel.id("parcel-delivery").read().write(),       # Delivery channel
+        ]
+        
+        envelope = pubnub.grant_token()\
+            .ttl(ttl)\
+            .authorized_uuid("delivery-box-server")\
+            .channels(channels)\
+            .sync()
+        
+        return envelope.result.token
+    except Exception as e:
+        print(f"❌ Error generating server token: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 def generate_token(pubnub, user_id=None, box_id=None, ttl=1440):
     """Generate PubNub access token

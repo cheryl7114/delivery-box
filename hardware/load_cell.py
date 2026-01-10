@@ -59,7 +59,7 @@ class LoadCellSensor:
             if is_empty:
                 print("Box is empty")
             else:
-                print("Weight present - parcel detected")
+                print("Weight detected - parcel present")
             self.was_empty = is_empty
         
         return is_empty
@@ -73,7 +73,7 @@ class LoadCellSensor:
         
         # Detect if weight increased above delivery threshold
         if current_weight >= DELIVERY_THRESHOLD and self.previous_weight < DELIVERY_THRESHOLD:
-            print(f"🚨 DELIVERY DETECTED! Weight: {current_weight:.1f}g")
+            print("🚨 DELIVERY DETECTED!")
             self.delivery_detected = True
             self.previous_weight = current_weight
             return True

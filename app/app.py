@@ -9,6 +9,7 @@ import os
 from datetime import datetime, timedelta
 from functools import wraps
 from pubnub_config import init_pubnub, publish_message, notify_user, generate_token
+from pubnub.callbacks import SubscribeCallback
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config.from_object(Config)
@@ -608,6 +609,60 @@ def weight_response():
         return jsonify({"status": "received"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500         
+
+
+# PubNub listener for IoT device messages
+class ParcelDeliveryListener(SubscribeCallback):
+    def message(self, pubnub_instance, message):
+        """Handle delivery notifications from IoT devices"""
+        try:
+            msg = message.message
+            print(f"📨 Received delivery notification: {msg}")
+            
+            if msg.get('action') == 'delivered':
+                parcel_id = msg.get('parcel_id')
+                
+                # Get parcel details
+                query = text("""
+                    SELECT p.id, p.user_id, p.parcel_name, b.box_name, p.is_delivered
+                    FROM parcels p
+                    JOIN boxes b ON p.box_id = b.id
+                    WHERE p.id = :parcel_id
+                """)
+                result = db.session.execute(query, {"parcel_id": parcel_id})
+                parcel = result.fetchone()
+                
+                if parcel:
+                    # Update database to mark as delivered
+                    if not parcel[4]:  # if not already delivered
+                        db.session.execute(
+                            text("UPDATE parcels SET is_delivered = 1, delivered_at = :now WHERE id = :pid"),
+                            {"now": datetime.now(), "pid": parcel_id}
+                        )
+                        db.session.commit()
+                    
+                    user_id = parcel[1]
+                    parcel_name = parcel[2]
+                    box_name = parcel[3]
+                    
+                    # Send real-time notification to user
+                    if user_id:
+                        notify_user(pubnub, user_id, 'parcel_delivered', {
+                            'parcel_id': parcel_id,
+                            'parcel_name': parcel_name,
+                            'box_name': box_name
+                        })
+                        print(f"✅ Notified user {user_id} about delivery")
+                    
+        except Exception as e:
+            print(f"❌ Error handling delivery notification: {e}")
+
+# Subscribe to parcel-delivery channel
+if pubnub:
+    pubnub.add_listener(ParcelDeliveryListener())
+    pubnub.subscribe().channels(['parcel-delivery']).execute()
+    print("📡 Backend listening on parcel-delivery channel")
+
 
 if __name__ == "__main__":
     # For local development only

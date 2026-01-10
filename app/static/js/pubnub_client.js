@@ -4,28 +4,44 @@
  */
 
 let pubnub = null
+let isRefreshingToken = false
 
-function initPubNub(userId, subscribeKey, callbacks) {
+function initPubNub(userId, subscribeKey, token, callbacks) {
     if (!subscribeKey || subscribeKey === 'None') {
         console.warn('PubNub subscribe key not configured')
         return
     }
 
-    pubnub = new PubNub({
-        subscribeKey: subscribeKey,
-        uuid: `user-web-${userId}`
-    })
+    if (!token || token === 'None') {
+        console.warn('PubNub token not provided - Access Manager may block connection')
+        return  // Don't initialize without token if PAM is enabled
+    }
 
-    // Subscribe to user's notification channel
-    pubnub.subscribe({
-        channels: [`user-${userId}`]
-    })
+    const config = {
+        subscribeKey: subscribeKey,
+        userId: `user-${userId}`  
+    }
+
+    pubnub = new PubNub(config)
+    
+    // Set token AFTER creating instance (required for v8+)
+    pubnub.setToken(token)
+    
+    console.log(`🔐 Token set for user-${userId}`)
 
     // Add connection status listener
     pubnub.addListener({
         status: function (statusEvent) {
             if (statusEvent.category === "PNConnectedCategory") {
                 console.log("✅ PubNub connected successfully")
+                isRefreshingToken = false  // Reset flag on successful connection
+            } else if (statusEvent.category === "PNAccessDeniedCategory") {
+                console.error("❌ PubNub access denied - token may be invalid or expired")
+                // Attempt to refresh token only once
+                if (!isRefreshingToken) {
+                    isRefreshingToken = true
+                    refreshPubNubToken(userId, subscribeKey, callbacks)
+                }
             }
         },
         message: function (event) {
@@ -33,6 +49,38 @@ function initPubNub(userId, subscribeKey, callbacks) {
             handlePubNubMessage(event, callbacks)
         }
     })
+
+    // Subscribe to user's notification channel
+    pubnub.subscribe({
+        channels: [`user-${userId}`],
+        withPresence: false
+    })
+
+    console.log(`📡 Subscribed to channel: user-${userId}`)
+}
+
+async function refreshPubNubToken(userId, subscribeKey, callbacks) {
+    try {
+        console.log('🔄 Refreshing PubNub token...')
+        const response = await fetch('/api/pubnub-token')
+        const data = await response.json()
+        
+        if (data.token) {
+            console.log('✅ New token received, reconnecting...')
+            // Unsubscribe and reconnect with new token
+            if (pubnub) {
+                pubnub.unsubscribeAll()
+                pubnub.stop()
+            }
+            initPubNub(userId, subscribeKey, data.token, callbacks)
+        } else {
+            console.error('❌ Token refresh failed - no token in response')
+            isRefreshingToken = false
+        }
+    } catch (e) {
+        console.error('Failed to refresh PubNub token:', e)
+        isRefreshingToken = false
+    }
 }
 
 function handlePubNubMessage(event, callbacks) {

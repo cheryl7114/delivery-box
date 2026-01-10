@@ -8,7 +8,7 @@ import jwt
 import os
 from datetime import datetime, timedelta
 from functools import wraps
-from pubnub_config import init_pubnub, publish_message, notify_user
+from pubnub_config import init_pubnub, publish_message, notify_user, generate_token
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config.from_object(Config)
@@ -60,7 +60,55 @@ def login():
 def home(user):
     # Home page (protected)
     pubnub_subscribe_key = os.getenv("PUBNUB_SUBSCRIBE_KEY")
-    return render_template("home.html", user=user, pubnub_subscribe_key=pubnub_subscribe_key)
+    
+    # Generate PubNub access token for this user
+    token = generate_token(pubnub, user["user_id"])
+    
+    return render_template("home.html", user=user, pubnub_subscribe_key=pubnub_subscribe_key, pubnub_token=token)
+
+@app.route("/api/pubnub-token", methods=["GET"])
+@login_required
+def get_pubnub_token(user):
+    """Generate a new PubNub access token for the authenticated user"""
+    try:
+        token = generate_token(pubnub, user["user_id"])
+        
+        if not token:
+            return jsonify({"error": "Failed to generate token", "type": "error"}), 500
+        
+        return jsonify({
+            "token": token,
+            "user_id": user["user_id"],
+            "type": "success"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e), "type": "error"}), 500
+
+@app.route("/api/pubnub-token/hardware", methods=["POST"])
+@login_required
+def get_hardware_token(user):
+    """Generate PubNub token for hardware devices (load cell, servo)
+    Note: This is mainly for testing. In production, use hardware/get_token.py directly on the Pi
+    """
+    try:
+        box_id = request.json.get("box_id")
+        
+        if not box_id:
+            return jsonify({"error": "Box ID required", "type": "error"}), 400
+        
+        # Generate hardware token (no specific user_id needed - can notify any user)
+        token = generate_token(pubnub, box_id=box_id, ttl=43200)  # 30 days
+        
+        if not token:
+            return jsonify({"error": "Failed to generate token", "type": "error"}), 500
+        
+        return jsonify({
+            "token": token,
+            "box_id": box_id,
+            "type": "success"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e), "type": "error"}), 500
 
 @app.route("/api/health")
 def health_check():
@@ -560,7 +608,6 @@ def weight_response():
         return jsonify({"status": "received"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500         
-
 
 if __name__ == "__main__":
     # For local development only

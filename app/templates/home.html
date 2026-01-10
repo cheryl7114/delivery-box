@@ -421,8 +421,9 @@
         // Initialize PubNub for real-time notifications
         const userId = "{{ user.user_id }}"
         const subscribeKey = '{{ pubnub_subscribe_key }}'
+        const pubnubToken = '{{ pubnub_token }}'
 
-        initPubNub(userId, subscribeKey, {
+        initPubNub(userId, subscribeKey, pubnubToken, {
             onParcelDelivered: function (parcelInfo) {
                 // Show notification when parcel is delivered
                 showMessage('parcelsMessage', {

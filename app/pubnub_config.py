@@ -50,6 +50,7 @@ def generate_token(pubnub, user_id=None, box_id=None, ttl=1440):
             channels = [
                 Channel.id(f"box-{box_id}").read(),
                 Channel.id(f"load-cell-control-{box_id}").read(),
+                Channel.id("parcel-delivery").write(),  # Load cell publishes delivery events
                 Channel.pattern("user-.*").write()  # Pattern for writing to any user channel
             ]
             

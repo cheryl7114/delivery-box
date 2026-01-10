@@ -33,6 +33,7 @@ class LoadCellSensor:
         
         self.previous_weight = 0
         self.delivery_detected = False
+        self.was_empty = True  # Track previous empty state
         
         print("Load cell initialized and tared")
     
@@ -52,7 +53,15 @@ class LoadCellSensor:
             return None  # Error reading sensor
         
         is_empty = weight < EMPTY_THRESHOLD
-        print(f"Current weight: {weight:.1f}g - Box is {'empty' if is_empty else 'not empty'}")
+        
+        # Only print when state changes
+        if is_empty != self.was_empty:
+            if is_empty:
+                print("Box is empty")
+            else:
+                print("Weight present - parcel detected")
+            self.was_empty = is_empty
+        
         return is_empty
     
     def check_delivery(self):

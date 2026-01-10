@@ -469,7 +469,7 @@
                             class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
                         >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
                             <span>Collected</span>
                         </button>
@@ -548,9 +548,23 @@
                 else if (data.error) showToast(data.error, data.type)
 
                 if (data.type === 'success') {
-                    // Refresh parcels list
-                    fetchActiveParcels()
-                    fetchHistoryParcels()
+                    // Fade out the parcel card before removing
+                    const parcelCard = document.querySelector(`#buttons-${pendingCollectionParcelId}`)?.closest('.border-2')
+                    if (parcelCard) {
+                        parcelCard.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out'
+                        parcelCard.style.opacity = '0'
+                        parcelCard.style.transform = 'scale(0.95)'
+                        
+                        // Wait for animation then refresh
+                        setTimeout(() => {
+                            fetchActiveParcels()
+                            fetchHistoryParcels()
+                        }, 500)
+                    } else {
+                        // Fallback if card not found
+                        fetchActiveParcels()
+                        fetchHistoryParcels()
+                    }
                 }
             } catch (e) {
                 showToast('Connection error. Please try again.', 'error')

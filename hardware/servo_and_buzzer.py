@@ -14,6 +14,9 @@ SERVO_PIN = 18
 LOCKED = 7.5    # 90° - locked position
 UNLOCKED = 2.5  # 0° - unlocked position
 
+# Buzzer setup
+BUZZER_PIN = 23  
+
 # PubNub setup
 BOX_ID = os.getenv('BOX_ID', '1')  # Default to '1' if not set
 CHANNEL = f"box-{BOX_ID}"
@@ -23,23 +26,35 @@ GPIO.setwarnings(False)
 GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SERVO_PIN, GPIO.OUT)
-pwm = GPIO.PWM(SERVO_PIN, 50)
-pwm.start(0)  # Start with no signal
+GPIO.setup(BUZZER_PIN, GPIO.OUT)
+servo_pwm = GPIO.PWM(SERVO_PIN, 50)
+servo_pwm.start(0)  # Start with no signal
+buzzer_pwm = GPIO.PWM(BUZZER_PIN, 500)  # 500Hz tone for piezo buzzer
+
+def beep(duration=0.1, times=1):
+    """Make the buzzer beep using PWM"""
+    for _ in range(times):
+        buzzer_pwm.start(50)  # 50% duty cycle
+        sleep(duration)
+        buzzer_pwm.stop()
+        sleep(duration)
 
 def lock_door():
     """Lock the door"""
     print("🔒 Locking door...")
-    pwm.ChangeDutyCycle(LOCKED)
+    servo_pwm.ChangeDutyCycle(LOCKED)
     sleep(2)  
-    pwm.ChangeDutyCycle(0)  # Stop signal after movement
+    servo_pwm.ChangeDutyCycle(0)  # Stop signal after movement
+    beep(0.1, 2)  # Short double beep
     return "locked"
 
 def unlock_door():
     """Unlock the door"""
     print("🔓 Unlocking door...")
-    pwm.ChangeDutyCycle(UNLOCKED)
+    servo_pwm.ChangeDutyCycle(UNLOCKED)
     sleep(2)  
-    pwm.ChangeDutyCycle(0)  # Stop signal after movement
+    servo_pwm.ChangeDutyCycle(0)  # Stop signal after movement
+    beep(0.2, 1)  # Single longer beep
     return "unlocked"
 
 class ServoListener(SubscribeCallback):
@@ -102,8 +117,9 @@ try:
 except KeyboardInterrupt:
     print("\n⚠️ Exiting...")
 finally:
-    pwm.ChangeDutyCycle(LOCKED)
+    servo_pwm.ChangeDutyCycle(LOCKED)
     sleep(1)
-    pwm.stop()
+    servo_pwm.stop()
+    buzzer_pwm.stop()
     GPIO.cleanup()
     print("🔒 Door locked and system cleaned up")

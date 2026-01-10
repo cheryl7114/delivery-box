@@ -184,11 +184,10 @@ def monitor_deliveries(sensor, pubnub):
                 if parcel_id:
                     print(f"Found expected parcel: {parcel_id}")
                     
-                    # Notify via both HTTP and PubNub
-                    http_success = notify_delivery_http(BOX_ID, parcel_id)
+                    # Notify via PubNub
                     pubnub_success = notify_delivery_pubnub(pubnub, BOX_ID, parcel_id)
                     
-                    if http_success or pubnub_success:
+                    if pubnub_success:
                         print("✅ Delivery notification sent successfully")
                 else:
                     print("⚠️ No parcel expected in this box. Delivery not recorded.")

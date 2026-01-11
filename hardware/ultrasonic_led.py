@@ -7,8 +7,8 @@ TRIG_PIN = 27
 ECHO_PIN = 4  
 
 # Motion detection settings
-DISTANCE_THRESHOLD = 50  # Distance in cm to trigger motion detection
-MOTION_SENSITIVITY = 300  # Change in distance (cm) to consider as motion
+DISTANCE_THRESHOLD = 12  # Distance in cm to trigger motion detection
+MOTION_SENSITIVITY = 3  # Change in distance (cm) to consider as motion
 
 # Setup GPIO
 GPIO.setmode(GPIO.BCM)

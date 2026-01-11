@@ -111,7 +111,7 @@ async function fetchActiveParcels() {
                     
                     <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg sm:rounded-xl p-3 sm:p-5 mb-4 sm:mb-5 border border-indigo-100">
                         <p class="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1 sm:mb-2">📍 Collection Point</p>
-                        <p class="text-base sm:text-lg font-bold text-indigo-700">Box ${parcel.box_name}</p>
+                        <p class="text-base sm:text-lg font-bold text-indigo-700">Box: ${parcel.box_name}</p>
                         <p class="text-xs sm:text-sm text-gray-600">${parcel.location}</p>
                     </div>
 
@@ -200,7 +200,7 @@ async function fetchHistoryParcels() {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
-                            <span class="font-semibold text-sm">Box ${parcel.box_name}</span>
+                            <span class="font-semibold text-sm">Box: ${parcel.box_name}</span>
                             <span class="text-gray-400">•</span>
                             <span class="text-sm">${parcel.location}</span>
                         </div>
